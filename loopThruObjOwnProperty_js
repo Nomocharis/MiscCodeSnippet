@@ -1,0 +1,104 @@
+        /*
+        
+        Looping thru obj to add dynamic properties, in this case, arraies, to categorize differnt product types
+        
+        */
+        
+        
+        $scope.displayQuoteBreakDownObj = {
+            materialArr: [],
+            laborArr: []
+        };
+
+        $scope.isMaterialBreakDownCollapsed = true;
+        $scope.isLaborBreakDownCollapsed = true;
+        /*
+        Quote Profitability 
+        */
+        if (_inheritedDataObj.pageSrcName && _inheritedDataObj.pageSrcName == 'Quote') {
+            if (_inheritedDataObj.pageID != undefined) {
+                if (_inheritedDataObj.pageID < 0) {
+                    $scope.displayPageInfo.pageID = "Unsaved Quote";
+                }
+            }
+
+            if (profitData != undefined) {
+
+                var materialDataSet = {};  //data object for all material items
+                var laborDataSet = {};  //data object for all labor items
+
+                for (var i = 0; i < profitData.length; i++) {
+                    //incase there is null description
+                    if (!profitData[i].Description) {
+                        $log.warn("Line item Description invalid. " + JSON.stringify(profitData[i]));
+                        continue;
+                    }
+
+                    //historical data use prefix, after vendor pricing validation and clean up, now use type
+                    /********************* Material *********************************/
+                    if (profitData[i].Description.indexOf("Material") > -1
+                        || profitData[i].Description.indexOf("M-") > -1
+                        || profitData[i].Type.indexOf("Material") > -1
+                        ) { //Material
+                        if (profitData[i].Type && profitData[i].Type != '') { //check if type is valid
+                            var materialType = profitData[i].Type;
+                            if (!materialDataSet.hasOwnProperty(materialType)) { //if this type does not exist in the local dataset
+                                materialDataSet[materialType] = [];  //define an empty array
+                                //materialDataSet[materialType].push(profitData[i]);
+                            }
+                            else {//already exist 
+                                //materialDataSet[materialType].push(profitData[i]);
+                            }
+                            materialDataSet[materialType].push(profitData[i]); //push to corresponding array
+                        }
+                        else { //this item does not have type, historical item or error one
+                            materialDataSet.others.push(profitData[i]);
+                        }
+                        profitResult.materialSell += parseFloat(profitData[i].TotalSell);
+                        profitResult.materialCost += parseFloat(profitData[i].TotalCost);
+                    }
+                    /********************* Labor *********************************/
+                    if (profitData[i].Description.indexOf("Labor") > -1
+                        || profitData[i].Description.indexOf("L-") > -1
+                        || profitData[i].Type.indexOf("Labor") > -1
+                        ) { //Labor
+                        if (profitData[i].Type && profitData[i].Type != '') { //check if type is valid
+                            var laborType = profitData[i].Type;
+                            if (!laborDataSet.hasOwnProperty(laborType)) { //if this type does not exist in the local dataset
+                                laborDataSet[laborType] = [];  //define an empty array
+                            }
+                            else {//already exist
+                                //blank 
+                            }
+                            laborDataSet[laborType].push(profitData[i]); //push to corresponding array
+                        }
+                        else { //this item does not have type, historical item or error one
+                            laborDataSet.others.push(profitData[i]);
+                        }
+                        profitResult.laborSell += parseFloat(profitData[i].TotalSell);
+                        profitResult.laborCost += parseFloat(profitData[i].TotalCost);
+                    }
+                }
+                $scope.displayProfit = _dataMnpFac.calculateProfit(profitResult);
+
+                //expose material type name and its total numbers to a scope variable
+                for (var mType in materialDataSet) {
+                    if (materialDataSet.hasOwnProperty(mType)) {//make sure the property is not inherited
+                        var typeSumObj = _dataMnpFac.calculateTypeLevelTotalMargin(materialDataSet[mType]);
+                        typeSumObj.name = mType;
+                        $scope.displayQuoteBreakDownObj.materialArr.push(typeSumObj);
+                    }
+                }
+                for (var lType in laborDataSet) {
+                    if (laborDataSet.hasOwnProperty(lType)) {//make sure the property is not inherited
+                        var typeSumObj = _dataMnpFac.calculateTypeLevelTotalMargin(laborDataSet[lType]);
+                        typeSumObj.name = lType;
+                        $scope.displayQuoteBreakDownObj.laborArr.push(typeSumObj);
+                    }
+                }
+
+            }
+        }
+        /*
+        Quote Profitability  ENDING
+        */
