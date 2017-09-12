@@ -1,0 +1,14 @@
+private static string ImageToBase64(string imgPath)
+        {
+            string base64String = null;
+            using (System.Drawing.Image image = System.Drawing.Image.FromFile(imgPath))
+            {
+                using (MemoryStream m = new MemoryStream())
+                {
+                    image.Save(m, image.RawFormat);
+                    byte[] imageBytes = m.ToArray();
+                    base64String = Convert.ToBase64String(imageBytes);
+                    return base64String;
+                }
+            }
+        }
